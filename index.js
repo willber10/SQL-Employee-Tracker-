@@ -10,7 +10,7 @@ const db = mysql.createConnection({
 
 function viewEmployees() {
     const query = `
-    SELECT employee.id, employee.first_name, employee.last_name, department.name, role.title, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager_name
+    SELECT employee.id, employee.first_name, employee.last_name, department.name AS department, role.title AS role, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager_name
     FROM employee
     INNER JOIN role ON employee.role_id = role.id
     INNER JOIN department ON role.department_id = department.id
@@ -26,7 +26,7 @@ function viewEmployees() {
 }
 
 function viewDepartments() {
-    db.query('SELECT * FROM department', function (err, results) {
+    db.query(`SELECT id, name 'department' FROM department`, function (err, results) {
         if (err) {
             console.log(err);
         } else {
@@ -36,7 +36,11 @@ function viewDepartments() {
 }
 
 function viewRoles() {
-    db.query('SELECT * FROM role', function (err, results) {
+    db.query(`SELECT role.id, title 'role', salary, department.name 'department' 
+    FROM role 
+    JOIN department 
+    ON role.department_id = department.id`, 
+    function (err, results) {
         if (err) {
             console.log(err);
         } else {
@@ -49,22 +53,22 @@ function addEmployee() {
     inquirer.prompt([
         {
             type: 'input',
-            name: 'firstName',
+            name: 'first_name',
             message: 'What is the employee\'s first name?'
         },
         {
             type: 'input',
-            name: 'lastName',
+            name: 'last_name',
             message: 'What is the employee\'s last name?'
         },
         {
             type: 'input',
-            name: 'roleId',
+            name: 'role_id',
             message: 'What is the employee\'s role ID?'
         },
         {
             type: 'input',
-            name: 'managerId',
+            name: 'manager_id',
             message: 'What is the employee\'s manager ID?'
         }
     ]).then((answers) => {
@@ -82,7 +86,7 @@ function addDepartment() {
     inquirer.prompt([
         {
             type: 'input',
-            name: 'departmentName',
+            name: 'name',
             message: 'What is the department\'s name?'
         }
     ]).then((answers) => {
@@ -90,7 +94,7 @@ function addDepartment() {
             if (err) {
                 console.log(err);
             } else {
-                console.log(results);
+                console.log("department added");
             }
         });
     })
@@ -110,7 +114,7 @@ function addRole() {
         },
         {
             type: 'input',
-            name: 'departmentId',
+            name: 'department_id',
             message: 'What is the role\'s department ID?'
         }
     ]).then((answers) => {
@@ -118,7 +122,7 @@ function addRole() {
             if (err) {
                 console.log(err);
             } else {
-                console.log(results);
+                console.log("role added");
             }
         });
     })
@@ -133,15 +137,15 @@ function updateRole() {
         },
         {
             type: 'input',
-            name: 'roleId',
+            name: 'role_id',
             message: 'What is the employee\'s new role ID?'
         }
     ]).then((answers) => {
-        db.query('UPDATE employee SET role_id = ? WHERE id = ?', [answers.roleId, answers.employeeId], function (err, results) {
+        db.query('UPDATE employee SET role_id = ? WHERE id = ?', [answers.role_id, answers.id], function (err, results) {
             if (err) {
                 console.log(err);
             } else {
-                console.log(results);
+                console.log("employee role updated");
             }
         });
     })
