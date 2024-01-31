@@ -268,7 +268,8 @@ function init () {
                 updateRole();
                 break;
             case 'Exit':
-                connection.end();
+                inquirer.break;
+                process.exit();
                 break;
         }
     })
