@@ -57,40 +57,71 @@ function viewRoles() {
 }
 
 function addEmployee() {
-    inquirer.prompt([
-        {
-            type: 'input',
-            name: 'first_name',
-            message: 'What is the employee\'s first name?'
-        },
-        {
-            type: 'input',
-            name: 'last_name',
-            message: 'What is the employee\'s last name?'
-        },
-        {
-            type: 'input',
-            name: 'role_id',
-            message: 'What is the employee\'s role ID?'
-        },
-        {
-            type: 'input',
-            name: 'manager_id',
-            message: 'What is the employee\'s manager ID?'
+    // First, fetch the current roles and managers from the database
+    db.query('SELECT * FROM role', function (err, roles) {
+        if (err) {
+            console.log(err);
+            init();
+            return;
         }
-    ]).then((answers) => {
-        db.query('INSERT INTO employee SET ?', answers, function (err, results) {
+
+        db.query('SELECT * FROM employee', function (err, managers) {
             if (err) {
                 console.log(err);
                 init();
-            } else {
-                console.log(results);
-                console.log("employee added");
-                init();
+                return;
             }
+
+            // Then, create arrays of role titles and manager names
+            const roleChoices = roles.map(role => role.title);
+            const managerChoices = managers.map(manager => `${manager.first_name} ${manager.last_name}`);
+
+            // Now, prompt the user
+            inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'first_name',
+                    message: 'What is the employee\'s first name?'
+                },
+                {
+                    type: 'input',
+                    name: 'last_name',
+                    message: 'What is the employee\'s last name?'
+                },
+                {
+                    type: 'list',
+                    name: 'role_id',
+                    message: 'What is the employee\'s role?',
+                    choices: roleChoices
+                },
+                {
+                    type: 'list',
+                    name: 'manager_id',
+                    message: 'Who is the employee\'s manager?',
+                    choices: managerChoices
+                }
+            ]).then((answers) => {
+                // Find the selected role's and manager's IDs
+                const role = roles.find(role => role.title === answers.role_id);
+                answers.role_id = role.id;
+
+                const manager = managers.find(manager => `${manager.first_name} ${manager.last_name}` === answers.manager_id);
+                answers.manager_id = manager.id;
+
+                db.query('INSERT INTO employee SET ?', answers, function (err, results) {
+                    if (err) {
+                        console.log(err);
+                        init();
+                    } else {
+                        console.log("Employee added!");
+                        init();
+                    }
+                });
+            });
         });
-    })
+    });
 }
+
 
 function addDepartment() {
     inquirer.prompt([
